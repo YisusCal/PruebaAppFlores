@@ -12,6 +12,7 @@ import EditarFlor from "../screens/EditarFlor";
 import ClienteFlores from "../screens/ClienteFlores";
 import CarritoScreen from "../screens/CarritoScreen";
 import { CarritoProvider } from "../context/CarritoContext";
+import FlorDetalles from "../screens/FlorDetalles";
 
 const Stack = createStackNavigator();
 
@@ -68,6 +69,11 @@ const AppNavigator = () => {
         <Stack.Screen 
           name="CarritoScreen" 
           component={CarritoScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="FlorDetalles" 
+          component={FlorDetalles} 
           options={{ headerShown: false }} 
         />
       </Stack.Navigator>

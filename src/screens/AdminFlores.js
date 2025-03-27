@@ -64,9 +64,9 @@ const AdminFlores = ({ navigation }) => {
       />
 
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <Text style={{ fontSize: 24, marginBottom: 20 }}>Bienvenido al Home</Text>
-            <Button title="Cerrar Sesión" onPress={handleLogout} />
-          </View>
+          <Text style={{ fontSize: 24, marginBottom: 20 }}>Bienvenido al Home</Text>
+          <Button title="Cerrar Sesión" onPress={handleLogout} />
+      </View>
     </View>
     
   );

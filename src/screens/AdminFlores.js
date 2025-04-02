@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Button, Alert, Image } from "react-native";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { getAuth, signOut } from "firebase/auth";
 
@@ -11,15 +11,16 @@ const AdminFlores = ({ navigation }) => {
 
   // Cargar flores desde Firestore
   useEffect(() => {
-    const fetchFlores = async () => {
-      const querySnapshot = await getDocs(collection(db, "flores"));
-      const floresArray = querySnapshot.docs.map((doc) => ({
+    // Listener en tiempo real
+    const unsubscribe = onSnapshot(collection(db, "flores"), (snapshot) => {
+      const listaFlores = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setFlores(floresArray);
-    };
-    fetchFlores();
+      setFlores(listaFlores);
+    });
+
+    return () => unsubscribe(); // Limpia el listener al desmontar
   }, []);
 
   // Eliminar una flor
@@ -63,9 +64,9 @@ const AdminFlores = ({ navigation }) => {
         )}
       />
 
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <Text style={{ fontSize: 24, marginBottom: 20 }}>Bienvenido al Home</Text>
           <Button title="Cerrar Sesión" onPress={handleLogout} />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       </View>
     </View>
     

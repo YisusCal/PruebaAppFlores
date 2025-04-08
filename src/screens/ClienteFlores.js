@@ -1,23 +1,41 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, Button } from "react-native";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { useCarrito } from "../context/CarritoContext";
 import { getAuth, signOut } from "firebase/auth";
+import { useRoute } from "@react-navigation/native";
 
 const ClienteFlores = ({ navigation }) => {
   const [productos, setProductos] = useState([]);
   const { carrito, agregarAlCarrito, quitarDelCarrito } = useCarrito();
   const auth = getAuth();
+  const route = useRoute();
+
+  // Obtener los filtros pasados desde la pantalla de filtros
+  const filtros = route.params?.filtros;
 
   useEffect(() => {
     const obtenerFlores = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "flores"));
+        let floresQuery = collection(db, "flores");
+        
+        // Aplicar filtros por nombre
+        if (filtros?.nombres?.length > 0) {
+          floresQuery = query(floresQuery, where("nombre", "in", filtros.nombres));
+        }
+
+        // Aplicar filtros por color
+        if (filtros?.colores?.length > 0) {
+          floresQuery = query(floresQuery, where("color", "in", filtros.colores));
+        }
+
+        const querySnapshot = await getDocs(floresQuery);
         const listaFlores = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
+
         setProductos(listaFlores);
       } catch (error) {
         console.error("Error al obtener flores:", error);
@@ -25,7 +43,7 @@ const ClienteFlores = ({ navigation }) => {
     };
 
     obtenerFlores();
-  }, []);
+  }, [filtros]); // Dependencia para que se ejecute cuando los filtros cambien
 
   const handleLogout = async () => {
     try {
@@ -38,13 +56,18 @@ const ClienteFlores = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>Catálogo de Flores</Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
+        Catálogo de Flores
+      </Text>
 
       {/* Botón de Cerrar Sesión */}
       <Button title="Cerrar Sesión" onPress={handleLogout} />
 
       {/* Botón de Ver Carrito */}
       <Button title="Ver Carrito" onPress={() => navigation.navigate("CarritoScreen")} />
+
+      {/* Botón de Filtrar */}
+      <Button title="Filtrar" onPress={() => navigation.navigate("FiltrosScreen")} />
 
       <FlatList
         data={productos}
@@ -59,7 +82,10 @@ const ClienteFlores = ({ navigation }) => {
               style={{ marginBottom: 15, padding: 10, borderWidth: 1 }}
             >
               {item.foto && (
-                <Image source={{ uri: item.foto }} style={{ width: 100, height: 100, marginBottom: 5 }} />
+                <Image
+                  source={{ uri: item.foto }}
+                  style={{ width: 100, height: 100, marginBottom: 5 }}
+                />
               )}
               <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.nombre}</Text>
               <Text>Precio: ${item.precio}</Text>
@@ -84,71 +110,3 @@ const ClienteFlores = ({ navigation }) => {
 };
 
 export default ClienteFlores;
-
-
-
-
-/* import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, Button, Image } from "react-native";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../config/firebaseConfig";
-import { useCarrito } from "../context/CarritoContext";
-import { useNavigation } from "@react-navigation/native";
-
-const ClienteFlores = () => {
-  const [productos, setProductos] = useState([]);
-  const { agregarAlCarrito } = useCarrito();
-  const navigation = useNavigation();
-
-  useEffect(() => {
-    const obtenerFlores = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "flores"));
-        const listaFlores = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setProductos(listaFlores);
-      } catch (error) {
-        console.error("Error al obtener flores:", error);
-      }
-    };
-
-    obtenerFlores();
-  }, []);
-
-  return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
-        Catálogo de Flores
-      </Text>
-      <FlatList
-        data={productos}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={{ marginBottom: 15, padding: 10, borderWidth: 1 }}>
-            {item.foto && (
-              <Image
-                source={{ uri: item.foto }}
-                style={{ width: 100, height: 100, marginBottom: 5 }}
-              />
-            )}
-            <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.nombre}</Text>
-            <Text>Precio: ${item.precio}</Text>
-            <Text>Descripción: {item.descripcion}</Text>
-            <Text>Cantidad disponible: {item.cantidad}</Text>
-            <Text>Disponibilidad: {item.disponible ? "Disponible" : "Agotado"}</Text>
-            <Button title="Agregar al carrito" onPress={() => agregarAlCarrito(item)} />
-          </View>
-        )}
-      />
-
-      <View>
-        <Button title="Ver Carrito" onPress={() => navigation.navigate("CarritoScreen")} />
-      </View>
-    </View>
-  );
-};
-
-export default ClienteFlores;
- */

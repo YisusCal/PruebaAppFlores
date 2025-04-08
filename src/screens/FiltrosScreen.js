@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, Button } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 
 const FiltrosScreen = () => {
@@ -8,6 +9,7 @@ const FiltrosScreen = () => {
 
   const [tiposSeleccionados, setTiposSeleccionados] = useState([]);
   const [coloresSeleccionados, setColoresSeleccionados] = useState([]);
+  const [userRole, setUserRole] = useState(null);
 
   // Capturar valores al regresar desde las otras pantallas
   useFocusEffect(() => {
@@ -21,14 +23,35 @@ const FiltrosScreen = () => {
     }
   });
 
+  useEffect(() => {
+    // Recupera el rol del usuario desde AsyncStorage
+    const obtenerRol = async () => {
+      try {
+        const rol = await AsyncStorage.getItem('userRole');
+        console.log(rol)
+        if (rol) {
+          setUserRole(rol); // Almacena el rol en el estado
+        }
+      } catch (error) {
+        console.error('Error al obtener el rol desde AsyncStorage:', error);
+      }
+    };
+
+    obtenerRol();
+  }, []);
+
   const aplicarFiltros = () => {
-    // Ajusta los filtros para incluir nombre y color
     const nuevosFiltros = {
       nombres: tiposSeleccionados,  // Aquí se filtra por nombre (tiposSeleccionados)
       colores: coloresSeleccionados,  // Aquí se filtra por color (coloresSeleccionados)
     };
 
-    navigation.navigate("AdminFlores", { filtros: nuevosFiltros });
+    // Verifica el rol y redirige a la pantalla correspondiente
+    if (userRole === "cliente") {
+      navigation.navigate("ClienteFlores", { filtros: nuevosFiltros });
+    } else if (userRole === "admin") {
+      navigation.navigate("AdminFlores", { filtros: nuevosFiltros });
+    }
   };
 
   return (

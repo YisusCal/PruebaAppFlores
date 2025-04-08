@@ -3,9 +3,9 @@ import { View, Text, TextInput, Button, Alert } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../config/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -21,14 +21,15 @@ const LoginScreen = ({ navigation }) => {
         const userData = userDoc.data();
         const userRole = userData.role; // "admin" o "cliente"
 
+        // Guardar el rol del usuario en AsyncStorage
+        await AsyncStorage.setItem('userRole', userRole);
+
         Alert.alert("Inicio de sesión exitoso", `Bienvenido ${userRole}`);
 
         // Redirigir según el rol
         if (userRole === "admin") {
           navigation.replace("AdminFlores"); // Pantalla de administrador
-          //navigation.replace("AdminHome"); // Pantalla de administrador
         } else {
-          //navigation.replace("ClienteHome"); // Pantalla de cliente
           navigation.replace("ClienteFlores"); // Pantalla de cliente
         }
       } else {
@@ -61,4 +62,3 @@ const LoginScreen = ({ navigation }) => {
 };
 
 export default LoginScreen;
-  

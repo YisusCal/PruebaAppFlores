@@ -13,6 +13,9 @@ import ClienteFlores from "../screens/ClienteFlores";
 import CarritoScreen from "../screens/CarritoScreen";
 import { CarritoProvider } from "../context/CarritoContext";
 import FlorDetalles from "../screens/FlorDetalles";
+import FiltrosScreen from "../screens/FiltrosScreen";
+import SeleccionarColorScreen from "../screens/SeleccionarColorScreen";
+import SeleccionarTipoScreen from "../screens/SeleccionarTipoScreen";
 
 const Stack = createStackNavigator();
 
@@ -74,6 +77,21 @@ const AppNavigator = () => {
         <Stack.Screen 
           name="FlorDetalles" 
           component={FlorDetalles} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="FiltrosScreen" 
+          component={FiltrosScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="SeleccionarColorScreen" 
+          component={SeleccionarColorScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="SeleccionarTipoScreen" 
+          component={SeleccionarTipoScreen} 
           options={{ headerShown: false }} 
         />
       </Stack.Navigator>

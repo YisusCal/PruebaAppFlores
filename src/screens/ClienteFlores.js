@@ -1,31 +1,31 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, Button } from "react-native";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { useCarrito } from "../context/CarritoContext";
 import { getAuth, signOut } from "firebase/auth";
 import { useRoute } from "@react-navigation/native";
+import { useFavoritos } from "../context/FavoritosContext"; // Usamos el contexto de favoritos
 
 const ClienteFlores = ({ navigation }) => {
   const [productos, setProductos] = useState([]);
   const { carrito, agregarAlCarrito, quitarDelCarrito } = useCarrito();
+  const { favoritos, toggleFavorito, esFavorito } = useFavoritos(); // Usamos el contexto de favoritos
   const auth = getAuth();
   const route = useRoute();
-
-  // Obtener los filtros pasados desde la pantalla de filtros
   const filtros = route.params?.filtros;
+  const total = (carrito.reduce((acc, item) => acc + item.cantidad, 0) > 0 ? true : false);
+  console.log(!total);
 
   useEffect(() => {
     const obtenerFlores = async () => {
       try {
         let floresQuery = collection(db, "flores");
-        
-        // Aplicar filtros por nombre
+
         if (filtros?.nombres?.length > 0) {
           floresQuery = query(floresQuery, where("nombre", "in", filtros.nombres));
         }
 
-        // Aplicar filtros por color
         if (filtros?.colores?.length > 0) {
           floresQuery = query(floresQuery, where("color", "in", filtros.colores));
         }
@@ -43,7 +43,7 @@ const ClienteFlores = ({ navigation }) => {
     };
 
     obtenerFlores();
-  }, [filtros]); // Dependencia para que se ejecute cuando los filtros cambien
+  }, [filtros]);
 
   const handleLogout = async () => {
     try {
@@ -56,18 +56,15 @@ const ClienteFlores = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
-        Catálogo de Flores
-      </Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>Catálogo de Flores</Text>
 
-      {/* Botón de Cerrar Sesión */}
       <Button title="Cerrar Sesión" onPress={handleLogout} />
-
-      {/* Botón de Ver Carrito */}
-      <Button title="Ver Carrito" onPress={() => navigation.navigate("CarritoScreen")} />
-
-      {/* Botón de Filtrar */}
+      <Text style={{ fontSize: 16, marginVertical: 10 }}>
+        Productos en carrito: {carrito.reduce((acc, item) => acc + item.cantidad, 0)}
+      </Text>
+      <Button title="Ver Carrito" onPress={() => navigation.navigate("CarritoScreen")} disabled={!total} />
       <Button title="Filtrar" onPress={() => navigation.navigate("FiltrosScreen")} />
+      <Button title="Ver Favoritos" onPress={() => navigation.navigate("FavoritosScreen")} /> {/* Ya no pasamos favoritos */}
 
       <FlatList
         data={productos}
@@ -75,22 +72,25 @@ const ClienteFlores = ({ navigation }) => {
         renderItem={({ item }) => {
           const productoEnCarrito = carrito.find((prod) => prod.id === item.id);
           const cantidad = productoEnCarrito ? productoEnCarrito.cantidad : 0;
-
           return (
             <TouchableOpacity
               onPress={() => navigation.navigate("FlorDetalles", { flor: item })}
               style={{ marginBottom: 15, padding: 10, borderWidth: 1 }}
             >
               {item.foto && (
-                <Image
-                  source={{ uri: item.foto }}
-                  style={{ width: 100, height: 100, marginBottom: 5 }}
-                />
+                <Image source={{ uri: item.foto }} style={{ width: 100, height: 100, marginBottom: 5 }} />
               )}
               <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.nombre}</Text>
               <Text>Precio: ${item.precio}</Text>
               <Text>Cantidad: {item.cantidad}</Text>
               <Text>Disponibilidad: {item.disponible ? "Disponible" : "Agotado"}</Text>
+
+              {/* ❤️ Botón de favoritos */}
+              <TouchableOpacity onPress={() => toggleFavorito(item)}>
+                <Text style={{ fontSize: 20 }}>
+                  {esFavorito(item.id) ? "❤️ Quitar de Favoritos" : "🤍 Agregar a Favoritos"}
+                </Text>
+              </TouchableOpacity>
 
               {cantidad === 0 ? (
                 <Button title="Agregar al carrito" onPress={() => agregarAlCarrito(item)} />

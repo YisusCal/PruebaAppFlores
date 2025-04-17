@@ -28,8 +28,15 @@ export const CarritoProvider = ({ children }) => {
     });
   };
 
+  // ✅ Nueva función para limpiar el carrito
+  const vaciarCarrito = () => {
+    setCarrito([]);
+  };
+
   return (
-    <CarritoContext.Provider value={{ carrito, agregarAlCarrito, quitarDelCarrito }}>
+    <CarritoContext.Provider
+      value={{ carrito, agregarAlCarrito, quitarDelCarrito, vaciarCarrito }}
+    >
       {children}
     </CarritoContext.Provider>
   );

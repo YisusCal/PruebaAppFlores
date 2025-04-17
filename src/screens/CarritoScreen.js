@@ -9,6 +9,7 @@ import {
   getDocs,
   addDoc,
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import {
   View,
   Text,
@@ -37,40 +38,79 @@ const CarritoScreen = ({ navigation }) => {
         {
           text: "OK",
           onPress: async () => {
-            // Paso 2, 3, 4 (lo haremos en los siguientes pasos)
-            // Ejemplo: await guardarPedidoEnFirebase(nuevoId);
-            // await actualizarStock();
-            vaciarCarrito();
-            navigation.navigate("ClienteFlores");
+            try {
+              const auth = getAuth();
+              const user = auth.currentUser;
+
+              // 1. Guardar el pedido en Firebase
+              const nuevoPedido = {
+                idPedido: nuevoId,
+                productos: carrito.map((item) => ({
+                  id: item.id,
+                  nombre: item.nombre,
+                  cantidad: item.cantidad,
+                  precio: item.precio,
+                })),
+                total: carrito.reduce(
+                  (acc, item) => acc + item.precio * item.cantidad,
+                  0
+                ),
+                fecha: new Date().toISOString(),
+                clienteUid: user.uid,
+              };
+
+              await addDoc(collection(db, "pedidos"), nuevoPedido);
+
+              // 2. Actualizar stock en Firebase
+              for (const item of carrito) {
+                const florRef = doc(db, "flores", item.id);
+                const florSnap = await getDoc(florRef);
+
+                if (florSnap.exists()) {
+                  const florData = florSnap.data();
+                  const cantidadActual = Number(florData.cantidad);
+                  const cantidadARestar = Number(item.cantidad);
+
+                  // Prevenir stock negativo
+                  const nuevaCantidad = Math.max(
+                    cantidadActual - cantidadARestar,
+                    0
+                  );
+
+                  if (!isNaN(cantidadActual) && !isNaN(cantidadARestar)) {
+                    await updateDoc(florRef, { cantidad: nuevaCantidad });
+                  } else {
+                    console.warn(
+                      "Cantidad inválida al actualizar stock:",
+                      item,
+                      florData
+                    );
+                  }
+                } else {
+                  console.warn("Flor no encontrada:", item.id);
+                }
+              }
+
+              // 3. Limpiar carrito y redirigir
+              vaciarCarrito();
+              navigation.navigate("ClienteFlores");
+
+            } catch (error) {
+              console.error(
+                "Error al guardar pedido o actualizar stock:",
+                error
+              );
+              Alert.alert(
+                "Error",
+                "Ocurrió un problema al procesar tu pedido."
+              );
+            }
           },
         },
       ]);
-
-      // 🔜 En el paso 2 guardaremos en Firebase y actualizaremos stock
     } catch (error) {
       console.error("Error al confirmar el pedido:", error);
       Alert.alert("Error", "No se pudo finalizar el pedido.");
-    }
-
-    // 4. Actualizar el stock de cada producto en Firebase
-    for (const item of carrito) {
-      const productoRef = doc(db, "flores", item.id);
-      const productoSnap = await getDoc(productoRef);
-
-      if (productoSnap.exists()) {
-        const productoData = productoSnap.data();
-        const stockActual = productoData.cantidad || 0;
-        const nuevoStock = stockActual - item.cantidad;
-
-        // Evitar negativos
-        if (nuevoStock < 0) {
-          console.warn(`Stock insuficiente para ${item.nombre}`);
-        } else {
-          await updateDoc(productoRef, {
-            cantidad: nuevoStock,
-          });
-        }
-      }
     }
   };
 
